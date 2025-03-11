@@ -20,105 +20,145 @@ export default function SignLanguageTranslator() {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [wsStatus, setWsStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected")
   const [handDetected, setHandDetected] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
   
-  const frameRate = 30
+  const frameRate = 15 // Reduced from 30 to lower bandwidth usage
   
   // Connect to WebSocket server
   const connectWebSocket = () => {
-    setWsStatus("connecting")
+    // Clear any previous connection errors
+    setConnectionError(null);
+    setWsStatus("connecting");
 
-    // Connect directly to the Python backend WebSocket server
-    const ws = new WebSocket("ws://localhost:8000/ws")
-
-    ws.onopen = () => {
-      console.log("WebSocket connection established")
-      setWsStatus("connected")
+    // Close any existing connection
+    if (wsRef.current && 
+        (wsRef.current.readyState === WebSocket.OPEN || 
+         wsRef.current.readyState === WebSocket.CONNECTING)) {
+      wsRef.current.close();
     }
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        
-        // Update hand detection status
-        const hasHands = data.handDetected
-        setHandDetected(hasHands)
-        
-        // If no hands are detected, clear prediction
-        if (!hasHands) {
-          setPrediction("")
-          setAccuracy(0)
-        } else {
-          if (data.prediction) {
-            setPrediction(data.prediction)
-          }
-          if (data.confidence) {
-            setAccuracy(Math.round(data.confidence * 100))
-          }
+    try {
+      // Try connecting directly to the Python backend first
+      const ws = new WebSocket("ws://localhost:8000/ws");
+      
+      // Set timeout to detect connection issues
+      const connectionTimeout = setTimeout(() => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          ws.close();
+          setConnectionError("Connection timeout. Please check if the backend server is running.");
+          setWsStatus("disconnected");
         }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error)
+      }, 5000);
+
+      ws.onopen = () => {
+        console.log("WebSocket connection established");
+        clearTimeout(connectionTimeout);
+        setWsStatus("connected");
+        setConnectionError(null);
       }
-    }
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error)
-      setWsStatus("disconnected")
-    }
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("Received message:", data);
+          
+          // Update hand detection status
+          const hasHands = data.handDetected !== undefined ? data.handDetected : !!data.prediction;
+          setHandDetected(hasHands);
+          
+          // Process prediction data
+          if (!hasHands || !data.prediction) {
+            setPrediction("");
+            setAccuracy(0);
+          } else {
+            setPrediction(data.prediction);
+            if (data.confidence) {
+              setAccuracy(Math.round(data.confidence * 100));
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
+      }
 
-    ws.onclose = () => {
-      console.log("WebSocket connection closed")
-      setWsStatus("disconnected")
-      // Clear all data when connection closes
-      setPrediction("")
-      setAccuracy(0)
-      setHandDetected(false)
-    }
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        setConnectionError("Failed to connect to the server. Please check if the backend is running.");
+        setWsStatus("disconnected");
+        clearTimeout(connectionTimeout);
+      }
 
-    wsRef.current = ws
+      ws.onclose = (event) => {
+        console.log("WebSocket connection closed:", event.code, event.reason);
+        setWsStatus("disconnected");
+        // Only set error if it wasn't already set by onerror
+        if (!connectionError && event.code !== 1000) {
+          setConnectionError(`Connection closed (Code: ${event.code}). ${event.reason || "Please try reconnecting."}`);
+        }
+        // Clear all data when connection closes
+        setPrediction("");
+        setAccuracy(0);
+        setHandDetected(false);
+        clearTimeout(connectionTimeout);
+      }
+
+      wsRef.current = ws;
+    } catch (error) {
+      console.error("Error creating WebSocket:", error);
+      setConnectionError("Failed to create WebSocket connection. Please try again.");
+      setWsStatus("disconnected");
+    }
   }
 
   // Disconnect WebSocket
   const disconnectWebSocket = () => {
     if (wsRef.current) {
-      wsRef.current.close()
-      wsRef.current = null
-      setWsStatus("disconnected")
+      wsRef.current.close();
+      wsRef.current = null;
+      setWsStatus("disconnected");
       // Clear all data when disconnecting
-      setPrediction("")
-      setAccuracy(0)
-      setHandDetected(false)
+      setPrediction("");
+      setAccuracy(0);
+      setHandDetected(false);
+      setConnectionError(null);
     }
   }
 
   // Capture and send frames to the backend
   const captureAndSendFrame = () => {
     if (!videoRef.current || !canvasRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      return
+      return;
     }
 
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const context = canvas.getContext("2d")
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
 
-    if (!context) return
+    if (!context) return;
 
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    try {
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-    // Draw current video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      // Draw current video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert canvas to base64 image (JPEG format with quality 0.8)
-    const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1]
+      // Convert canvas to base64 image (JPEG format with quality 0.7 for reduced size)
+      const base64Image = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
 
-    // Send the frame to the backend
-    wsRef.current.send(
-      JSON.stringify({
-        frame: base64Image,
-        timestamp: Date.now(),
-      }),
-    )
+      // Send the frame to the backend
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(
+          JSON.stringify({
+            frame: base64Image,
+            timestamp: Date.now(),
+          }),
+        );
+      }
+    } catch (error) {
+      console.error("Error capturing or sending frame:", error);
+    }
   }
 
   // Start or stop the camera stream
@@ -126,19 +166,19 @@ export default function SignLanguageTranslator() {
     if (isStreaming) {
       // Stop the stream
       if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream
-        stream.getTracks().forEach((track) => track.stop())
-        videoRef.current.srcObject = null
-        setIsStreaming(false)
-        setPrediction("")
-        setAccuracy(0)
-        setHandDetected(false)
-        disconnectWebSocket()
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
+        setIsStreaming(false);
+        setPrediction("");
+        setAccuracy(0);
+        setHandDetected(false);
+        disconnectWebSocket();
       }
     } else {
       // Start the stream
-      setIsLoading(true)
-      setCameraError(null)
+      setIsLoading(true);
+      setCameraError(null);
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -147,58 +187,57 @@ export default function SignLanguageTranslator() {
             width: { ideal: 640 },
             height: { ideal: 480 },
           },
-        })
+        });
 
         if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          setIsStreaming(true)
+          videoRef.current.srcObject = stream;
+          setIsStreaming(true);
 
           // Connect to WebSocket after camera starts
-          connectWebSocket()
+          connectWebSocket();
         }
       } catch (err) {
-        console.error("Error accessing camera:", err)
-        setCameraError("Could not access camera. Please ensure you've granted camera permissions.")
+        console.error("Error accessing camera:", err);
+        setCameraError("Could not access camera. Please ensure you've granted camera permissions.");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
   }
 
   // Set up frame capture interval when streaming starts
   useEffect(() => {
-    let frameInterval: NodeJS.Timeout | null = null
+    let frameInterval: NodeJS.Timeout | null = null;
 
     if (isStreaming && wsStatus === "connected") {
       // Calculate interval in milliseconds based on desired frame rate
-      const intervalMs = 1000 / frameRate
+      const intervalMs = 1000 / frameRate;
 
       frameInterval = setInterval(() => {
-        captureAndSendFrame()
-      }, intervalMs)
+        captureAndSendFrame();
+      }, intervalMs);
     }
 
     return () => {
       if (frameInterval) {
-        clearInterval(frameInterval)
+        clearInterval(frameInterval);
       }
     }
-  }, [isStreaming, wsStatus, frameRate])
+  }, [isStreaming, wsStatus]);
 
   // Clean up on component unmount
   useEffect(() => {
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream
-        stream.getTracks().forEach((track) => track.stop())
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
       }
-      disconnectWebSocket()
+      disconnectWebSocket();
     }
-  }, [])
+  }, []);
 
   return (
-    <main className="container mx-auto py-2 px-4">
-
+    <main className="container mx-auto py-6 px-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Camera Section */}
         <div className="lg:col-span-2">
@@ -246,6 +285,12 @@ export default function SignLanguageTranslator() {
                 {/* Hidden canvas used for frame capture */}
                 <canvas ref={canvasRef} className="hidden" />
               </div>
+
+              {connectionError && (
+                <div className="w-full p-3 mb-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                  {connectionError}
+                </div>
+              )}
 
               <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <Button
@@ -352,5 +397,5 @@ export default function SignLanguageTranslator() {
         </div>
       </div>
     </main>
-  )
+  );
 }
