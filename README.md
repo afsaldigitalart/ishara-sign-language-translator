@@ -32,6 +32,7 @@ npm run dev
 ### Backend Setup  
 ```sh
 cd backend
+pip install -r requirements.txt
 python app.py
 ```
 
