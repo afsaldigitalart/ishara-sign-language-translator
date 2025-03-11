@@ -36,7 +36,18 @@ pip install -r requirements.txt
 python app.py
 ```
 
-## 🚀 Usage Guide  
+## 🚀 Usage Guide 
+
 1. Open your browser and navigate to **`http://localhost:3000`**  
 2. Use the interface to start translating sign language gestures into text  
 3. Ensure your webcam is enabled for real-time gesture recognition
+
+
+## 📷 Screenshots
+
+ ![Screenshot 2025-03-11 174539](https://github.com/user-attachments/assets/0ac01d3e-aa09-4f70-9ec2-77132886a9e1)
+ Main UI
+![Screenshot 2025-03-11 174712](https://github.com/user-attachments/assets/529adb8d-b137-4191-bb1f-cfb6c28c50a7)
+Detection UI
+
+ 
