@@ -45,9 +45,11 @@ python app.py
 
 ## 📷 Screenshots
 
+##### Main UI
  ![Screenshot 2025-03-11 174539](https://github.com/user-attachments/assets/0ac01d3e-aa09-4f70-9ec2-77132886a9e1)
-### Main UI
+ 
+##### Detection UI
 ![Screenshot 2025-03-11 174712](https://github.com/user-attachments/assets/529adb8d-b137-4191-bb1f-cfb6c28c50a7)
-### Detection UI
+
 
  
