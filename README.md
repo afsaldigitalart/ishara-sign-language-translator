@@ -18,7 +18,7 @@ Ishara is a real-time sign language translator that bridges the communication ga
 
 ### Clone the Repository  
 ```sh
-git clone https://github.com/your-repo/ishara-sign-language-translator.git
+git clone https://github.com/afsaldigitalart/ishara-sign-language-translator.git
 cd ishara-sign-language-translator
 ```
 
