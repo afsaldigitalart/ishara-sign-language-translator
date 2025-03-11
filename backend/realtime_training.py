@@ -1,3 +1,11 @@
+"""
+This script uses webcam to process hand landmarks in real-time and save them to a CSV file.
+It also allows the user to select a class for each sample by pressing keys.
+The available classes are loaded from a JSON file, and new classes can be added on the fly.
+This ensure better data collection and labeling for training the model.
+"""
+
+
 import os
 import cv2
 import mediapipe as mp
@@ -14,7 +22,7 @@ from datetime import datetime
 class HandLandmarkCapture:
     def __init__(self, output_file=r"csv\train_landmarks.csv", class_file=r"class_names.json"):
         """Initialize the hand landmark capture tool."""
-        # Add A, B, C to the classes
+        # Add Signs to the classes
         self.default_classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C"]
         
         # Load available classes or create new with default
@@ -309,7 +317,7 @@ class HandLandmarkCapture:
                 self.df.to_csv(self.output_file, index=False)
                 print(f"Saved {self.landmarks_collected} samples to {self.output_file}")
             
-            # 'q' quits
+            # 'Esc' quits
             elif key == 27:
                 break
             
@@ -317,7 +325,7 @@ class HandLandmarkCapture:
             if is_recording:
                 frames_captured += 1
         
-        # Clean up
+        # Closing everything
         cap.release()
         cv2.destroyAllWindows()
         
@@ -447,14 +455,6 @@ class HandLandmarkCapture:
         frames_captured = 0
         sample_counter = 0
         last_key = None
-        
-        print("\nHand Landmark Capture Tool")
-        print("-------------------------")
-        print("Press 1-9 to select a numeric sign class")
-        print("Press 'a', 'b', or 'c' to select letter classes")
-        print("Press SPACE to start/stop recording")
-        print("Press 's' to save the dataset")
-        print("Press 'q' to quit")
         
         while cap.isOpened():
             success, image = cap.read()
@@ -629,7 +629,7 @@ class HandLandmarkCapture:
                 self.df.to_csv(self.output_file, index=False)
                 print(f"Saved {self.landmarks_collected} samples to {self.output_file}")
             
-            # 'q' quits
+            # 'Esc' quits
             elif key == 27:
                 break
             

@@ -1,4 +1,9 @@
-# app.py - FastAPI WebSocket Server
+"""
+This is the main backend script that processes the webcam feed and sends predictions back to the client via WebSocket.
+this uses the MediaPipe Hands model to detect hand landmarks in the webcam feed. It then uses a 
+pre-trained Random Forest classifier to predict the sign language gesture based on the landmarks.
+
+"""
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import cv2

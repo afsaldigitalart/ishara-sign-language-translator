@@ -1,3 +1,5 @@
+"""This is a temp file generate by the module for processing the code."""
+
 import os
 import cv2
 import mediapipe as mp

@@ -1,3 +1,7 @@
+"""Run this script to check the accuracy of the model and print a classification report.
+It shows the prection and the confidence level of the prediction. Uses Open CV to capture the video feed and MediaPipe to detect the hand landmarks.
+"""
+
 import cv2
 import mediapipe as mp
 import numpy as np

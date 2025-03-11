@@ -1,3 +1,8 @@
+"""
+We used images for training our model. We used MediaPipe to extract hand landmarks from these images.
+This script processes all images in a folder and saves the landmarks to a CSV file.
+
+"""
 import os
 import cv2
 import mediapipe as mp

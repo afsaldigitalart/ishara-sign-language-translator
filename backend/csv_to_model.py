@@ -1,3 +1,10 @@
+
+"""
+This script processes the landmarks CSV file and trains a Random Forest classifier. It saves the trained model,
+the scaler, and the list of unique labels to disk.
+
+"""
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
