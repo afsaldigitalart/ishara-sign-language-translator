@@ -22,7 +22,7 @@ export default function SignLanguageTranslator() {
   const [handDetected, setHandDetected] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
   
-  const frameRate = 30
+  const frameRate = 5
   
   // Connect to WebSocket server
   const connectWebSocket = () => {
