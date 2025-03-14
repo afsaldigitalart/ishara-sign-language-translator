@@ -1,5 +1,4 @@
-![logoOnly](https://github.com/user-attachments/assets/b18c1278-333c-4089-b9e1-f73e3a36fa9d)
-# Ishara - Sign Language Translator  
+# ![logoOnly](https://github.com/user-attachments/assets/b18c1278-333c-4089-b9e1-f73e3a36fa9d) 
 
 ## 📌 Project Description  
 Ishara is a real-time sign language translator that bridges the communication gap between sign language users and non-signers. It leverages machine learning and computer vision to recognize sign language gestures and convert them into text.  
