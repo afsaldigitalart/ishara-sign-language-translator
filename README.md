@@ -1,3 +1,4 @@
+![logoOnly](https://github.com/user-attachments/assets/da2e4caa-70e1-43c4-be1b-abc7601d88be)
 # Ishara - Sign Language Translator  
 
 ## 📌 Project Description  
